@@ -1,4 +1,5 @@
 import sys
+import psycopg2
 from datetime import datetime, timedelta
 import random
 import json
@@ -48,13 +49,14 @@ def write_to_json(mock_data):
     print(f"Generated {len(mock_data['Users'])} users and {len(mock_data['Weights'])} weights in mock_data.json")
 
 def write_to_database(mock_data, db_config):
+    connection = None  # Add this line to initialize the variable
     try:
         connection = psycopg2.connect(**db_config)
         cursor = connection.cursor()
 
         for user in mock_data['Users']:
             cursor.execute("""
-                INSERT INTO "User" (
+                INSERT INTO "Users" (
                     "UserUid", "FirstName", "LastName", "CreationDate", "DOB",
                     "Email", "Phone", "StartWeight")
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING "UserId";
@@ -67,7 +69,7 @@ def write_to_database(mock_data, db_config):
 
             for weight in filter(lambda w: w['UserId'] == user, mock_data['Weights']):
                 cursor.execute("""
-                    INSERT INTO "Weight" ("LogDate", "Value", "UserId")
+                    INSERT INTO "Weights" ("LogDate", "Value", "UserId")
                     VALUES (%s, %s, %s);
                 """, (
                     weight['LogDate'], weight['Value'], user_id
